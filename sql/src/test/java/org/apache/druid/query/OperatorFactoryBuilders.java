@@ -20,7 +20,6 @@
 package org.apache.druid.query;
 
 import com.google.common.base.Preconditions;
-import org.apache.druid.query.aggregation.AggregatorFactory;
 import org.apache.druid.query.filter.DimFilter;
 import org.apache.druid.query.operator.ColumnWithDirection;
 import org.apache.druid.query.operator.ColumnWithDirection.Direction;
@@ -31,8 +30,6 @@ import org.apache.druid.query.operator.OperatorFactory;
 import org.apache.druid.query.operator.ScanOperatorFactory;
 import org.apache.druid.query.operator.window.ComposingProcessor;
 import org.apache.druid.query.operator.window.Processor;
-import org.apache.druid.query.operator.window.WindowFrame;
-import org.apache.druid.query.operator.window.WindowFramedAggregateProcessor;
 import org.apache.druid.query.operator.window.WindowOperatorFactory;
 import org.apache.druid.query.operator.window.ranking.WindowRankProcessor;
 
@@ -101,10 +98,5 @@ public class OperatorFactoryBuilders
   public static Processor rankProcessor(String outputColumn, String... groupingColumns)
   {
     return new WindowRankProcessor(Arrays.asList(groupingColumns), outputColumn, false);
-  }
-
-  public static Processor framedAggregateProcessor(WindowFrame window, AggregatorFactory... aggregations)
-  {
-    return new WindowFramedAggregateProcessor(window, aggregations);
   }
 }

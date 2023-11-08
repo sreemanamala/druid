@@ -27,11 +27,18 @@ import org.apache.calcite.runtime.CalciteException;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.fun.SqlInternalOperators;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
+import org.apache.calcite.sql2rel.SqlToRelConverter.SqlIdentifierFinder;
+import org.apache.calcite.util.Pair;
 import org.apache.druid.java.util.common.StringUtils;
 import org.apache.druid.sql.calcite.run.EngineFeature;
+import org.checkerframework.checker.nullness.qual.PolyNull;
 
 /**
  * Druid extended SQL validator. (At present, it doesn't actually
@@ -80,6 +87,7 @@ class DruidSqlValidator extends BaseDruidSqlValidator
     super.validateCall(call, scope);
   }
 
+
   private CalciteContextException buildCalciteContextException(String message, SqlCall call)
   {
     SqlParserPos pos = call.getParserPosition();
@@ -89,5 +97,67 @@ class DruidSqlValidator extends BaseDruidSqlValidator
         pos.getColumnNum(),
         pos.getEndLineNum(),
         pos.getEndColumnNum());
+  }
+
+  @Override
+  protected @PolyNull SqlNode performUnconditionalRewrites(@PolyNull SqlNode node, boolean underFrom)
+  {
+    if (
+         node != null
+        && node.getKind() == SqlKind.IN) {
+      SqlCall call = (SqlCall) node;
+      if(call.getOperandList().get(1) instanceof SqlNodeList) {
+        SqlParserPos pos = call.getParserPosition();
+        SqlNode left = call.getOperandList().get(0);
+        SqlNodeList right = (SqlNodeList) call.getOperandList().get(1);
+        Pair<SqlNodeList, SqlNodeList> exprAndLiterals = decomposeInArgs(right);
+        SqlNodeList exprs = exprAndLiterals.left;
+        SqlNodeList literals = exprAndLiterals.right;
+
+        if(!literals.isEmpty()) {
+          SqlOperator op;
+          if(false) {
+          op = SqlInternalOperators.DRUID_IN;
+          }else {
+          op = SqlStdOperatorTable.IN;
+          }
+          SqlCall inLiteralsCall = op.createCall(pos, left, literals);
+//          SqlCall inLiteralsCall = SqlInternalOperators.DRUID_IN.createCall(pos, left, literals);
+
+          if(!exprs.isEmpty()) {
+
+            node = SqlStdOperatorTable.OR.createCall(
+                pos,
+                SqlStdOperatorTable.IN.createCall(pos, left, exprs),
+                inLiteralsCall
+            );
+          } else {
+            node = inLiteralsCall;
+          }
+        }
+      }
+    }
+    return super.performUnconditionalRewrites(node, underFrom);
+  }
+
+  /**
+   * Decomposes the IN arguments into lists of expressions and literals.
+   *
+   * @param sqlNodeList
+   * @return a Pair ; for which the left hand side is the expressions ; the right are the literals
+   */
+  private Pair<SqlNodeList, SqlNodeList> decomposeInArgs(SqlNodeList sqlNodeList)
+  {
+    SqlIdentifierFinder identifierFinder = new SqlIdentifierFinder();
+    SqlNodeList exprs = new SqlNodeList(sqlNodeList.getParserPosition());
+    SqlNodeList literals = new SqlNodeList(sqlNodeList.getParserPosition());
+    for (SqlNode sqlNode : sqlNodeList) {
+      if (sqlNode.accept(identifierFinder)) {
+        exprs.add(sqlNode);
+      } else {
+        literals.add(sqlNode);
+      }
+    }
+    return new Pair<>(exprs, literals);
   }
 }
