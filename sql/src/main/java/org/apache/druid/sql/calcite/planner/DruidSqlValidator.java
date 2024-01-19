@@ -30,6 +30,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlInternalOperators;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -144,7 +145,7 @@ class DruidSqlValidator extends BaseDruidSqlValidator
    * Decomposes the IN arguments into lists of expressions and literals.
    *
    * @param sqlNodeList
-   * @return a Pair ; for which the left hand side is the expressions ; the right are the literals
+   * @return a Pair ; for which the left hand side is the expressions and null literals ; the right are the literals
    */
   private Pair<SqlNodeList, SqlNodeList> decomposeInArgs(SqlNodeList sqlNodeList)
   {
@@ -152,7 +153,7 @@ class DruidSqlValidator extends BaseDruidSqlValidator
     SqlNodeList exprs = new SqlNodeList(sqlNodeList.getParserPosition());
     SqlNodeList literals = new SqlNodeList(sqlNodeList.getParserPosition());
     for (SqlNode sqlNode : sqlNodeList) {
-      if (sqlNode.accept(identifierFinder)) {
+      if (SqlUtil.isNull(sqlNode) || sqlNode.accept(identifierFinder)) {
         exprs.add(sqlNode);
       } else {
         literals.add(sqlNode);

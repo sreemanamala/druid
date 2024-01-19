@@ -35,6 +35,8 @@ import org.apache.druid.sql.calcite.planner.PlannerContext;
 import org.apache.druid.sql.calcite.rel.VirtualColumnRegistry;
 
 import javax.annotation.Nullable;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -117,7 +119,7 @@ public class LikeOperatorConversion2 extends DirectOperatorConversion
    */
   private SortedSet<String> extractStringValues(List<RexNode> literals)
   {
-    SortedSet<String> values = new TreeSet<>();
+    SortedSet<String> values = new TreeSet<>(Comparator.naturalOrder());
     for (RexNode literal : literals) {
 
       if (!literal.isA(SqlKind.LITERAL)) {
