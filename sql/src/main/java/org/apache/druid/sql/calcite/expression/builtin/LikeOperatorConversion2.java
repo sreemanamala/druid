@@ -22,10 +22,11 @@ package org.apache.druid.sql.calcite.expression.builtin;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlInternalOperators;
 import org.apache.druid.query.filter.DimFilter;
-import org.apache.druid.query.filter.LikeDimFilter;
+import org.apache.druid.query.filter.InDimFilter;
 import org.apache.druid.segment.column.RowSignature;
 import org.apache.druid.sql.calcite.expression.DirectOperatorConversion;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
@@ -35,6 +36,8 @@ import org.apache.druid.sql.calcite.rel.VirtualColumnRegistry;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class LikeOperatorConversion2 extends DirectOperatorConversion
 {
@@ -57,8 +60,7 @@ public class LikeOperatorConversion2 extends DirectOperatorConversion
       PlannerContext plannerContext,
       RowSignature rowSignature,
       @Nullable VirtualColumnRegistry virtualColumnRegistry,
-      RexNode rexNode
-  )
+      RexNode rexNode)
   {
     final List<RexNode> operands = ((RexCall) rexNode).getOperands();
     final DruidExpression druidExpression = Expressions.toDruidExpression(
@@ -69,28 +71,84 @@ public class LikeOperatorConversion2 extends DirectOperatorConversion
     if (druidExpression == null) {
       return null;
     }
+    final String columnName = getRefColumn(
+        plannerContext,
+        rowSignature,
+        virtualColumnRegistry,
+        operands.get(0)
+    );
+    if (columnName == null) {
+      return null;
+    }
+    SortedSet<String> values = extractStringValues(operands.subList(1, operands.size()));
+    if (values == null) {
+      return null;
+    }
+    return new InDimFilter(columnName, values);
 
-    if (druidExpression.isSimpleExtraction()) {
-      return new LikeDimFilter(
-          druidExpression.getSimpleExtraction().getColumn(),
-          RexLiteral.stringValue(operands.get(1)),
-          operands.size() > 2 ? RexLiteral.stringValue(operands.get(2)) : null,
-          druidExpression.getSimpleExtraction().getExtractionFn()
-      );
-    } else if (virtualColumnRegistry != null) {
+    // if (druidExpression.isSimpleExtraction()) {
+    // return new LikeDimFilter(
+    // druidExpression.getSimpleExtraction().getColumn(),
+    // RexLiteral.stringValue(operands.get(1)),
+    // operands.size() > 2 ? RexLiteral.stringValue(operands.get(2)) : null,
+    // druidExpression.getSimpleExtraction().getExtractionFn()
+    // );
+    // } else if (virtualColumnRegistry != null) {
+    // String v = virtualColumnRegistry.getOrCreateVirtualColumnForExpression(
+    // druidExpression,
+    // operands.get(0).getType()
+    // );
+    //
+    // return new LikeDimFilter(
+    // v,
+    // RexLiteral.stringValue(operands.get(1)),
+    // operands.size() > 2 ? RexLiteral.stringValue(operands.get(2)) : null,
+    // null
+    // );
+    // } else {
+    // return null;
+    // }
+  }
+
+  /**
+   * Flattens the given set of literals into {@link String}s.
+   *
+   * @return null if unsuccessfull
+   */
+  private SortedSet<String> extractStringValues(List<RexNode> literals)
+  {
+    SortedSet<String> values = new TreeSet<>();
+    for (RexNode literal : literals) {
+
+      if (!literal.isA(SqlKind.LITERAL)) {
+        return null;
+      }
+      values.add(RexLiteral.stringValue(literal));
+    }
+    return values;
+  }
+
+  private static String getRefColumn(PlannerContext plannerContext, RowSignature rowSignature,
+      VirtualColumnRegistry virtualColumnRegistry, RexNode expression)
+  {
+
+    final DruidExpression druidExpression = Expressions.toDruidExpression(
+        plannerContext,
+        rowSignature,
+        expression
+    );
+    if (druidExpression == null) {
+      return null;
+    }
+
+    if (druidExpression.isDirectColumnAccess()) {
+      return druidExpression.getDirectColumn();
+    } else {
       String v = virtualColumnRegistry.getOrCreateVirtualColumnForExpression(
           druidExpression,
-          operands.get(0).getType()
+          expression.getType()
       );
-
-      return new LikeDimFilter(
-          v,
-          RexLiteral.stringValue(operands.get(1)),
-          operands.size() > 2 ? RexLiteral.stringValue(operands.get(2)) : null,
-          null
-      );
-    } else {
-      return null;
+      return v;
     }
   }
 }

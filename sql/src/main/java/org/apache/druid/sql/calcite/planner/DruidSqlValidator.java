@@ -116,7 +116,7 @@ class DruidSqlValidator extends BaseDruidSqlValidator
 
         if(!literals.isEmpty()) {
           SqlOperator op;
-          if(false) {
+          if(true) {
           op = SqlInternalOperators.DRUID_IN;
           }else {
           op = SqlStdOperatorTable.IN;
