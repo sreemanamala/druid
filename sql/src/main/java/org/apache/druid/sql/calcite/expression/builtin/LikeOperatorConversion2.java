@@ -125,7 +125,18 @@ public class LikeOperatorConversion2 extends DirectOperatorConversion
       if (!literal.isA(SqlKind.LITERAL)) {
         return null;
       }
-      values.add(RexLiteral.stringValue(literal));
+      //FIXME: this might not be good enough
+      switch(literal.getType().getSqlTypeName() ) {
+
+        case BIGINT:
+        case INTEGER:
+        values.add(((Number) RexLiteral.value(literal)).toString());
+        break;
+        default:
+        values.add(RexLiteral.stringValue(literal));
+        break;
+
+      }
     }
     return values;
   }

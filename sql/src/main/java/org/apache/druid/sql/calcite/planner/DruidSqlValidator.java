@@ -45,8 +45,9 @@ import org.checkerframework.checker.nullness.qual.PolyNull;
  * Druid extended SQL validator. (At present, it doesn't actually
  * have any extensions yet, but it will soon.)
  */
-class DruidSqlValidator extends BaseDruidSqlValidator
+public class DruidSqlValidator extends BaseDruidSqlValidator
 {
+  public static int NATIVE_IN_THRESHOLD = Integer.MAX_VALUE;
   private final PlannerContext plannerContext;
 
   protected DruidSqlValidator(
@@ -117,7 +118,7 @@ class DruidSqlValidator extends BaseDruidSqlValidator
 
         if(!literals.isEmpty()) {
           SqlOperator op;
-          if(false) {
+          if(literals.size() >= NATIVE_IN_THRESHOLD) {
           op = SqlInternalOperators.DRUID_IN;
           }else {
           op = SqlStdOperatorTable.IN;

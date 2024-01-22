@@ -48,6 +48,7 @@ import org.apache.druid.server.security.AuthTestUtils;
 import org.apache.druid.sql.calcite.planner.CalciteRulesManager;
 import org.apache.druid.sql.calcite.planner.CatalogResolver;
 import org.apache.druid.sql.calcite.planner.DruidPlanner;
+import org.apache.druid.sql.calcite.planner.DruidSqlValidator;
 import org.apache.druid.sql.calcite.planner.PlannerConfig;
 import org.apache.druid.sql.calcite.planner.PlannerFactory;
 import org.apache.druid.sql.calcite.planner.PlannerResult;
@@ -136,6 +137,13 @@ public class InPlanningBenchmark
       "1", "10", "100", "1000", "10000", "100000", "1000000"
   })
   private Integer inClauseExprCount;
+
+
+  @Param({
+    "1000001", "100"
+  })
+  private Integer nativeInThresHold;
+
   private SqlEngine engine;
   @Nullable
   private PlannerFactory plannerFactory;
@@ -215,6 +223,7 @@ public class InPlanningBenchmark
     IntStream.range(1, inClauseExprCount - 1).forEach(i -> sqlBuilder.append(i).append(","));
     sqlBuilder.append(inClauseExprCount).append(")");
     final String sql = sqlBuilder.toString();
+    DruidSqlValidator.NATIVE_IN_THRESHOLD  = nativeInThresHold;
 
     try (final DruidPlanner planner = plannerFactory.createPlannerForTesting(
         engine,
