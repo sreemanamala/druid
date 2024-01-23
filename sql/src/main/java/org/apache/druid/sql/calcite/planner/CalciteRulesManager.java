@@ -51,7 +51,6 @@ import org.apache.druid.sql.calcite.external.ExternalTableScanRule;
 import org.apache.druid.sql.calcite.rule.AggregatePullUpLookupRule;
 import org.apache.druid.sql.calcite.rule.CaseToCoalesceRule;
 import org.apache.druid.sql.calcite.rule.CoalesceLookupRule;
-import org.apache.druid.sql.calcite.rule.RecognizeInRule;
 import org.apache.druid.sql.calcite.rule.DruidLogicalValuesRule;
 import org.apache.druid.sql.calcite.rule.DruidRelToDruidRule;
 import org.apache.druid.sql.calcite.rule.DruidRules;
@@ -342,8 +341,6 @@ public class CalciteRulesManager
       if (plannerContext.isReverseLookup()) {
         builder.addRuleInstance(new ReverseLookupRule(plannerContext));
       }
-      builder.addRuleInstance(new RecognizeInRule(plannerContext));
-
     }
 
     // Calcite's builtin reduction rules.

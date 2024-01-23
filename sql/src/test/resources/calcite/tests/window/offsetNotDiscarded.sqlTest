@@ -2,7 +2,7 @@ type: "operatorValidation"
 
 sql: |
   SELECT
-    RANK() OVER (ORDER BY m2 ASC) AS ranking,
+    RANK() OVER (PARTITION BY m1 ORDER BY m2 ASC) AS ranking,
     m1,m2,dim1,dim2
   FROM foo
      
