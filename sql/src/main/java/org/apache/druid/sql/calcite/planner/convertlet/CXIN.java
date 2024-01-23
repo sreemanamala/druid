@@ -26,15 +26,10 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlInternalOperators;
-import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql2rel.SqlRexContext;
 import org.apache.calcite.sql2rel.SqlRexConvertlet;
-import org.apache.calcite.util.Static;
-import org.apache.druid.java.util.common.IAE;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Interval;
-import org.joda.time.chrono.ISOChronology;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +43,6 @@ public class CXIN implements DruidConvertletFactory
 
   private CXIN()
   {
-    // Singleton.
   }
 
   @Override
@@ -61,28 +55,6 @@ public class CXIN implements DruidConvertletFactory
   public List<SqlOperator> operators()
   {
     return Collections.singletonList(SqlInternalOperators.DRUID_IN);
-  }
-
-  private static Interval intervalFromStringArgument(
-      final SqlParserPos parserPos,
-      final String intervalString,
-      final DateTimeZone sessionTimeZone
-  )
-  {
-    try {
-      return new Interval(intervalString, ISOChronology.getInstance(sessionTimeZone));
-    }
-    catch (IllegalArgumentException e) {
-      final RuntimeException ex =
-          new IAE("Function '%s' second argument is not a valid ISO8601 interval: %s", NAME, e.getMessage());
-
-      throw Static.RESOURCE.validatorContext(
-          parserPos.getLineNum(),
-          parserPos.getColumnNum(),
-          parserPos.getEndLineNum(),
-          parserPos.getEndColumnNum()
-      ).ex(ex);
-    }
   }
 
   private static class TimeInIntervalConvertlet implements SqlRexConvertlet

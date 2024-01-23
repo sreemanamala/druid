@@ -93,7 +93,7 @@ import org.apache.druid.sql.calcite.expression.builtin.LTrimOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.LeastOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.LeftOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.LikeOperatorConversion;
-import org.apache.druid.sql.calcite.expression.builtin.LikeOperatorConversion2;
+import org.apache.druid.sql.calcite.expression.builtin.DruidInOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.MillisToTimestampOperatorConversion;
 import org.apache.druid.sql.calcite.expression.builtin.MultiValueStringOperatorConversions;
 import org.apache.druid.sql.calcite.expression.builtin.MultiValueStringToArrayOperatorConversion;
@@ -204,7 +204,7 @@ public class DruidOperatorTable implements SqlOperatorTable
       ImmutableList.<SqlOperatorConversion>builder()
                    .add(new BTrimOperatorConversion())
                    .add(new LikeOperatorConversion())
-                   .add(new LikeOperatorConversion2())
+                   .add(new DruidInOperatorConversion())
                    .add(new LTrimOperatorConversion())
                    .add(new PositionOperatorConversion())
                    .add(new RegexpExtractOperatorConversion())

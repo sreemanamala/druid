@@ -41,11 +41,11 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class LikeOperatorConversion2 extends DirectOperatorConversion
+public class DruidInOperatorConversion extends DirectOperatorConversion
 {
   private static final SqlOperator SQL_FUNCTION = SqlInternalOperators.DRUID_IN;
 
-  public LikeOperatorConversion2()
+  public DruidInOperatorConversion()
   {
     super(SQL_FUNCTION, "druid_in");
   }
@@ -87,29 +87,6 @@ public class LikeOperatorConversion2 extends DirectOperatorConversion
       return null;
     }
     return new InDimFilter(columnName, values);
-
-    // if (druidExpression.isSimpleExtraction()) {
-    // return new LikeDimFilter(
-    // druidExpression.getSimpleExtraction().getColumn(),
-    // RexLiteral.stringValue(operands.get(1)),
-    // operands.size() > 2 ? RexLiteral.stringValue(operands.get(2)) : null,
-    // druidExpression.getSimpleExtraction().getExtractionFn()
-    // );
-    // } else if (virtualColumnRegistry != null) {
-    // String v = virtualColumnRegistry.getOrCreateVirtualColumnForExpression(
-    // druidExpression,
-    // operands.get(0).getType()
-    // );
-    //
-    // return new LikeDimFilter(
-    // v,
-    // RexLiteral.stringValue(operands.get(1)),
-    // operands.size() > 2 ? RexLiteral.stringValue(operands.get(2)) : null,
-    // null
-    // );
-    // } else {
-    // return null;
-    // }
   }
 
   /**
