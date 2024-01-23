@@ -19,12 +19,19 @@
 
 package org.apache.druid.sql.calcite.expression.builtin;
 
+import com.google.common.collect.ImmutableList;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlInternalOperators;
+import org.apache.calcite.sql2rel.SqlRexContext;
+import org.apache.calcite.sql2rel.SqlRexConvertlet;
 import org.apache.druid.query.filter.DimFilter;
 import org.apache.druid.query.filter.InDimFilter;
 import org.apache.druid.segment.column.RowSignature;
@@ -32,28 +39,54 @@ import org.apache.druid.sql.calcite.expression.DirectOperatorConversion;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
 import org.apache.druid.sql.calcite.expression.Expressions;
 import org.apache.druid.sql.calcite.planner.PlannerContext;
+import org.apache.druid.sql.calcite.planner.convertlet.DruidConvertletFactory;
 import org.apache.druid.sql.calcite.rel.VirtualColumnRegistry;
-
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class DruidInOperatorConversion extends DirectOperatorConversion
+    implements DruidConvertletFactory, SqlRexConvertlet
 {
-  private static final SqlOperator SQL_FUNCTION = SqlInternalOperators.DRUID_IN;
+  private static final SqlOperator IN_OPERATOR = SqlInternalOperators.DRUID_IN;
+  public static final DruidInOperatorConversion INSTANCE = new DruidInOperatorConversion();
 
   public DruidInOperatorConversion()
   {
-    super(SQL_FUNCTION, "druid_in");
+    super(IN_OPERATOR, "druid_in");
   }
 
   @Override
-  public SqlOperator calciteOperator()
+  public SqlRexConvertlet createConvertlet(PlannerContext plannerContext)
   {
-    return SQL_FUNCTION;
+    return this;
+  }
+
+  @Override
+  public RexNode convertCall(final SqlRexContext cx, final SqlCall call)
+  {
+    final RexBuilder rexBuilder = cx.getRexBuilder();
+    final List<RexNode> newArgs = new ArrayList<RexNode>();
+
+    SqlNode left = call.getOperandList().get(0);
+    newArgs.add(cx.convertExpression(left));
+
+    SqlNodeList values = (SqlNodeList) call.getOperandList().get(1);
+    for (SqlNode sqlNode : values) {
+      newArgs.add(cx.convertExpression(sqlNode));
+    }
+
+    return rexBuilder.makeCall(SqlInternalOperators.DRUID_IN, newArgs);
+  }
+
+  @Override
+  public List<SqlOperator> operators()
+  {
+    return ImmutableList.of(calciteOperator());
   }
 
   @Nullable
@@ -102,16 +135,17 @@ public class DruidInOperatorConversion extends DirectOperatorConversion
       if (!literal.isA(SqlKind.LITERAL)) {
         return null;
       }
-      //FIXME: this might not be good enough
-      switch(literal.getType().getSqlTypeName() ) {
+      // FIXME: this might not be good enough
+      switch (literal.getType().getSqlTypeName())
+      {
 
         case BIGINT:
         case INTEGER:
         values.add(((Number) RexLiteral.value(literal)).toString());
-        break;
+          break;
         default:
         values.add(RexLiteral.stringValue(literal));
-        break;
+          break;
 
       }
     }
