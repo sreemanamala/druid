@@ -135,9 +135,9 @@ public class DruidInOperatorConversion extends DirectOperatorConversion
       if (!literal.isA(SqlKind.LITERAL)) {
         return null;
       }
-      // FIXME: this might not be good enough
       switch (literal.getType().getSqlTypeName())
       {
+        // FIXME: this might not be good enough as InDimFilter only handles strings
 
         case BIGINT:
         case INTEGER:
