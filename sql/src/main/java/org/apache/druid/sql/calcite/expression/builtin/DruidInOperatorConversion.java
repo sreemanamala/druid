@@ -94,7 +94,8 @@ public class DruidInOperatorConversion extends DirectOperatorConversion
   }
 
 
-static  LoadingCache<List<RexNode>, SortedSet<String>> cache = CacheBuilder.newBuilder().build(
+  public static boolean useCache = false;
+  static LoadingCache<List<RexNode>, SortedSet<String>> cache = CacheBuilder.newBuilder().build(
       new CacheLoader<List<RexNode>, SortedSet<String>>()
       {
 
@@ -144,7 +145,7 @@ static  LoadingCache<List<RexNode>, SortedSet<String>> cache = CacheBuilder.newB
 
   private SortedSet<String> extractStringValues1(List<RexNode> subList)
   {
-    if(true)
+    if(useCache)
     {
       try {
         return cache.get(subList);
