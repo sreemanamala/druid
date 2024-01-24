@@ -19,6 +19,9 @@
 
 package org.apache.druid.sql.calcite.expression.builtin;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
@@ -32,6 +35,7 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlInternalOperators;
 import org.apache.calcite.sql2rel.SqlRexContext;
 import org.apache.calcite.sql2rel.SqlRexConvertlet;
+import org.apache.druid.java.util.common.guava.Comparators;
 import org.apache.druid.query.filter.DimFilter;
 import org.apache.druid.query.filter.InDimFilter;
 import org.apache.druid.segment.column.RowSignature;
@@ -44,10 +48,10 @@ import org.apache.druid.sql.calcite.rel.VirtualColumnRegistry;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 public class DruidInOperatorConversion extends DirectOperatorConversion
     implements DruidConvertletFactory, SqlRexConvertlet
@@ -89,6 +93,19 @@ public class DruidInOperatorConversion extends DirectOperatorConversion
     return ImmutableList.of(calciteOperator());
   }
 
+
+static  LoadingCache<List<RexNode>, SortedSet<String>> cache = CacheBuilder.newBuilder().build(
+      new CacheLoader<List<RexNode>, SortedSet<String>>()
+      {
+
+        @Override
+        public SortedSet<String> load(List<RexNode> key) throws Exception
+        {
+          return extractStringValues(key);
+        }
+      }
+  );
+
   @Nullable
   @Override
   public DimFilter toDruidFilter(
@@ -115,11 +132,30 @@ public class DruidInOperatorConversion extends DirectOperatorConversion
     if (columnName == null) {
       return null;
     }
-    SortedSet<String> values = extractStringValues(operands.subList(1, operands.size()));
+
+
+    SortedSet<String> values =
+        extractStringValues1(operands.subList(1, operands.size()));
     if (values == null) {
       return null;
     }
     return new InDimFilter(columnName, values);
+  }
+
+  private SortedSet<String> extractStringValues1(List<RexNode> subList)
+  {
+    if(true)
+    {
+      try {
+        return cache.get(subList);
+      }
+      catch (ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+    }else {
+      return extractStringValues(subList);
+    }
+
   }
 
   /**
@@ -127,9 +163,9 @@ public class DruidInOperatorConversion extends DirectOperatorConversion
    *
    * @return null if unsuccessfull
    */
-  private SortedSet<String> extractStringValues(List<RexNode> literals)
+  private static SortedSet<String> extractStringValues(List<RexNode> literals)
   {
-    SortedSet<String> values = new TreeSet<>(Comparator.naturalOrder());
+    SortedSet<String> values = new TreeSet<>(Comparators.naturalNullsFirst());
     for (RexNode literal : literals) {
 
       if (!literal.isA(SqlKind.LITERAL)) {
