@@ -283,7 +283,9 @@ public class InPlanningBenchmark
   public void queryEqualOrInSql(Blackhole blackhole)
   {
     final Map<String, Object> context = ImmutableMap.of(
-        "inSubQueryThreshold", inSubQueryThreshold, "useCache", false
+        "inSubQueryThreshold", inSubQueryThreshold,
+        "useCache", false,
+        PlannerConfig.CTX_NATIVE_QUERY_SQL_PLANNING_MODE, PlannerConfig.NATIVE_QUERY_SQL_PLANNING_MODE_DECOUPLED
     );
     StringBuilder sqlBuilder = new StringBuilder().append(
         "explain plan for select long1 from foo where string1 = '7' or long1 in (");
