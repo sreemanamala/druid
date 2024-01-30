@@ -19,8 +19,6 @@
 
 package org.apache.druid.benchmark.query;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -150,7 +148,7 @@ public class InPlanningBenchmark
   private Closer closer = Closer.create();
 
   @Setup(Level.Trial)
-  public void setup()
+  public void setup() throws Exception
   {
     final GeneratorSchemaInfo schemaInfo = GeneratorBasicSchemas.SCHEMA_MAP.get("in-testbench");
 
@@ -242,12 +240,6 @@ public class InPlanningBenchmark
                jsonMapper.writerWithDefaultPrettyPrinter()
                          .writeValueAsString(jsonMapper.readValue((String) planResult[0], List.class))
       );
-    }
-    catch (JsonMappingException e) {
-      throw new RuntimeException(e);
-    }
-    catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
     }
   }
 
