@@ -575,11 +575,6 @@ public abstract class QueryHandler extends SqlStatementHandler.BaseStatementHand
             false
         );
       }
-
-      if (explain != null) {
-        return planExplanation(possiblyLimitedRoot, newRoot, true);
-      }
-
       try {
         log.info("final query : " +
                  new DefaultObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(baseQuery.getQuery()));
@@ -588,7 +583,6 @@ public abstract class QueryHandler extends SqlStatementHandler.BaseStatementHand
         throw new RuntimeException(e);
       }
       DruidQuery finalBaseQuery = baseQuery;
-
       final Supplier<QueryResponse<Object[]>> resultsSupplier = () -> plannerContext.getQueryMaker().runQuery(finalBaseQuery);
 
       return new PlannerResult(resultsSupplier, finalBaseQuery.getOutputRowType());

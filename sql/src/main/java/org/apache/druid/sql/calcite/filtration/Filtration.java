@@ -110,7 +110,7 @@ public class Filtration
     return transform(
         this,
         ImmutableList.of(
-            CombineAndSimplifyBounds.instance1(),
+            CombineAndSimplifyBounds.instance(),
             MoveTimeFiltersToIntervals.instance(),
             ConvertBoundsToSelectors.create(rowSignature),
             ConvertSelectorsToIns.create(rowSignature),
@@ -135,7 +135,7 @@ public class Filtration
     final Filtration transformed = transform(
         this,
         ImmutableList.of(
-            CombineAndSimplifyBounds.instance1(),
+            CombineAndSimplifyBounds.instance(),
             ConvertBoundsToSelectors.create(rowSignature),
             ConvertSelectorsToIns.create(rowSignature),
             RemoveRedundantIsTrue.instance()

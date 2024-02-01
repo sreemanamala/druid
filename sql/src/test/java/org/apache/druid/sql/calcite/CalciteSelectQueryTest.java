@@ -1905,7 +1905,7 @@ public class CalciteSelectQueryTest extends BaseCalciteQueryTest
     testQuery(
         "SELECT dim1 FROM "
             + "(SELECT __time, dim1 FROM druid.foo ORDER BY __time DESC LIMIT 4) "
-            + "WHERE dim1 IN ('abc', 'def', 'asd', 'fdsf', 'fdfgg', 'fdsfds')",
+            + "WHERE dim1 IN ('abc', 'def')",
         ImmutableList.of(
             newScanQueryBuilder()
                 .dataSource(

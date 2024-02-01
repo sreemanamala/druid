@@ -19,6 +19,8 @@
 
 package org.apache.druid.benchmark.query;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -148,7 +150,7 @@ public class InPlanningBenchmark
   private Closer closer = Closer.create();
 
   @Setup(Level.Trial)
-  public void setup() throws Exception
+  public void setup()
   {
     final GeneratorSchemaInfo schemaInfo = GeneratorBasicSchemas.SCHEMA_MAP.get("in-testbench");
 
@@ -241,6 +243,12 @@ public class InPlanningBenchmark
                          .writeValueAsString(jsonMapper.readValue((String) planResult[0], List.class))
       );
     }
+    catch (JsonMappingException e) {
+      throw new RuntimeException(e);
+    }
+    catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @TearDown(Level.Trial)
@@ -275,9 +283,7 @@ public class InPlanningBenchmark
   public void queryEqualOrInSql(Blackhole blackhole)
   {
     final Map<String, Object> context = ImmutableMap.of(
-        "inSubQueryThreshold", inSubQueryThreshold,
-        "useCache", false
-//        PlannerConfig.CTX_NATIVE_QUERY_SQL_PLANNING_MODE, PlannerConfig.NATIVE_QUERY_SQL_PLANNING_MODE_DECOUPLED
+        "inSubQueryThreshold", inSubQueryThreshold, "useCache", false
     );
     StringBuilder sqlBuilder = new StringBuilder().append(
         "explain plan for select long1 from foo where string1 = '7' or long1 in (");

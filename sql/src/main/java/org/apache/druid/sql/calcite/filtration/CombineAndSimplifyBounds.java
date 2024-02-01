@@ -49,7 +49,8 @@ public class CombineAndSimplifyBounds extends BottomUpTransform
   private CombineAndSimplifyBounds()
   {
   }
-  public static CombineAndSimplifyBounds instance1()
+
+  public static CombineAndSimplifyBounds instance()
   {
     return INSTANCE;
   }
@@ -64,12 +65,12 @@ public class CombineAndSimplifyBounds extends BottomUpTransform
       final List<DimFilter> children = getAndFilterChildren((AndDimFilter) filter);
       final DimFilter one = doSimplifyAnd(children);
       final DimFilter two = negate(doSimplifyOr(negateAll(children)));
-      return one;//computeCost(one) <= computeCost(two) ? one : two;
+      return computeCost(one) <= computeCost(two) ? one : two;
     } else if (filter instanceof OrDimFilter) {
       final List<DimFilter> children = getOrFilterChildren((OrDimFilter) filter);
       final DimFilter one = doSimplifyOr(children);
       final DimFilter two = negate(doSimplifyAnd(negateAll(children)));
-      return one;//computeCost(one) <= computeCost(two) ? one : two;
+      return computeCost(one) <= computeCost(two) ? one : two;
     } else if (filter instanceof NotDimFilter) {
       final DimFilter field = ((NotDimFilter) filter).getField();
       final DimFilter candidate;
@@ -80,7 +81,7 @@ public class CombineAndSimplifyBounds extends BottomUpTransform
       } else {
         candidate = negate(field);
       }
-      return filter;//computeCost(filter) <= computeCost(candidate) ? filter : candidate;
+      return computeCost(filter) <= computeCost(candidate) ? filter : candidate;
     } else {
       return filter;
     }
