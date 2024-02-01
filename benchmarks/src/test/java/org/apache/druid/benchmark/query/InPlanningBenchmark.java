@@ -47,6 +47,7 @@ import org.apache.druid.server.security.AuthTestUtils;
 import org.apache.druid.sql.calcite.planner.CalciteRulesManager;
 import org.apache.druid.sql.calcite.planner.CatalogResolver;
 import org.apache.druid.sql.calcite.planner.DruidPlanner;
+import org.apache.druid.sql.calcite.planner.DruidSqlValidator;
 import org.apache.druid.sql.calcite.planner.PlannerConfig;
 import org.apache.druid.sql.calcite.planner.PlannerFactory;
 import org.apache.druid.sql.calcite.planner.PlannerResult;
@@ -130,6 +131,12 @@ public class InPlanningBenchmark
       "1", "10", "100", "1000", "10000", "100000", "1000000"
   })
   private Integer inClauseLiteralsCount;
+
+  @Param({
+    "1000001", "100"
+  })
+  private Integer nativeInThresHold;
+
   private SqlEngine engine;
   @Nullable
   private PlannerFactory plannerFactory;
@@ -205,6 +212,7 @@ public class InPlanningBenchmark
 
     String prefix = ("explain plan for select long1 from foo where long1 in ");
     final String sql = createQuery(prefix, inClauseLiteralsCount);
+    DruidSqlValidator.NATIVE_IN_THRESHOLD  = nativeInThresHold;
 
     final Sequence<Object[]> resultSequence = getPlan(sql, null);
     final Object[] planResult = resultSequence.toList().get(0);
