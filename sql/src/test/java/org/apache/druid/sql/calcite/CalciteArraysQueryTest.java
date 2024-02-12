@@ -1984,37 +1984,6 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
             new Object[]{"[\"b\",\"c\"]"}
         )
     );
-
-//    testBuilder()
-//        .sql("SELECT dim2 FROM foo WHERE ARRAY_CONTAINS(ARRAY['a', 'abc'], dim2)")
-//        .queryContext(QUERY_CONTEXT_NO_STRINGIFY_ARRAY_USE_EQUALITY)
-//        .expectedQueries(ImmutableList.of(
-//            newScanQueryBuilder()
-//                .dataSource(CalciteTests.DATASOURCE1)
-//                .intervals(querySegmentSpec(Filtration.eternity()))
-//                .filters(
-//                    or(
-//                        equality("dim2", "", ColumnType.STRING),
-//                        equality("dim2", "abc", ColumnType.STRING)
-//                    )
-//                )
-//                .columns("dim2")
-//                .context(QUERY_CONTEXT_DEFAULT)
-//                .build()
-//        ))
-//        .expectedResults(
-//            NullHandling.replaceWithDefault() ? ImmutableList.of(
-//                new Object[]{""},
-//                new Object[]{""},
-//                new Object[]{"abc"},
-//                new Object[]{""}
-//            ) :
-//            ImmutableList.of(
-//                new Object[]{""},
-//                new Object[]{"abc"}
-//            )
-//        )
-//        .run();
   }
 
   @Test
