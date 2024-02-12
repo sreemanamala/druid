@@ -96,6 +96,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -590,37 +591,569 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
     List<Object[]> expectedResults;
     if (useDefault) {
       expectedResults = ImmutableList.of(
-          new Object[]{null, "[]", null, null, null, "[1]", "[2]", null, null, null, "[1,2,3]", null, "", null, null, "", null, null},
-          new Object[]{"[\"a\",\"b\"]", "[2,3]", "[null]", "[\"a\",\"b\",\"foo\"]", "[\"foo\",\"a\",\"b\"]", "[2,3,1]", "[2,2,3]", "[null,1.1]", "[2.2,null]", null, null, null, "a", 2L, 0.0D, "a", 2L, 0.0D},
-          new Object[]{"[\"b\",\"b\"]", "[1]", null, "[\"b\",\"b\",\"foo\"]", "[\"foo\",\"b\",\"b\"]", "[1,1]", "[2,1]", null, null, "[\"d\",\"e\",\"b\",\"b\"]", "[1,4,1]", null, "b", 1L, null, "b", 1L, null},
-          new Object[]{null, "[null,2,9]", "[999.0,5.5,null]", null, null, "[null,2,9,1]", "[2,null,2,9]", "[999.0,5.5,null,1.1]", "[2.2,999.0,5.5,null]", null, null, null, "", 0L, 999.0D, "", 0L, 999.0D},
-          new Object[]{"[\"a\",\"b\"]", "[1,null,3]", "[1.1,2.2,null]", "[\"a\",\"b\",\"foo\"]", "[\"foo\",\"a\",\"b\"]", "[1,null,3,1]", "[2,1,null,3]", "[1.1,2.2,null,1.1]", "[2.2,1.1,2.2,null]", "[\"a\",\"b\",\"a\",\"b\"]", "[1,2,3,1,null,3]", "[1.1,2.2,3.3,1.1,2.2,null]", "a", 1L, 1.1D, "a", 1L, 1.1D},
-          new Object[]{"[\"d\",null,\"b\"]", "[1,2,3]", "[null,2.2,null]", "[\"d\",null,\"b\",\"foo\"]", "[\"foo\",\"d\",null,\"b\"]", "[1,2,3,1]", "[2,1,2,3]", "[null,2.2,null,1.1]", "[2.2,null,2.2,null]", "[\"b\",\"c\",\"d\",null,\"b\"]", "[1,2,3,4,1,2,3]", "[1.1,3.3,null,2.2,null]", "d", 1L, 0.0D, "d", 1L, 0.0D},
-          new Object[]{"[null,\"b\"]", null, "[999.0,null,5.5]", "[null,\"b\",\"foo\"]", "[\"foo\",null,\"b\"]", null, null, "[999.0,null,5.5,1.1]", "[2.2,999.0,null,5.5]", "[\"a\",\"b\",\"c\",null,\"b\"]", null, "[3.3,4.4,5.5,999.0,null,5.5]", "", null, 999.0D, "", null, 999.0D},
-          new Object[]{null, null, "[]", null, null, null, null, "[1.1]", "[2.2]", null, null, "[1.1,2.2,3.3]", "", null, null, "", null, null},
-          new Object[]{"[\"a\",\"b\"]", "[2,3]", "[null,1.1]", "[\"a\",\"b\",\"foo\"]", "[\"foo\",\"a\",\"b\"]", "[2,3,1]", "[2,2,3]", "[null,1.1,1.1]", "[2.2,null,1.1]", null, null, null, "a", 2L, 0.0D, "a", 2L, 0.0D},
-          new Object[]{"[\"b\",\"b\"]", "[null]", null, "[\"b\",\"b\",\"foo\"]", "[\"foo\",\"b\",\"b\"]", "[null,1]", "[2,null]", null, null, "[\"d\",\"e\",\"b\",\"b\"]", "[1,4,null]", null, "b", 0L, null, "b", 0L, null},
-          new Object[]{"[null]", "[null,2,9]", "[999.0,5.5,null]", "[null,\"foo\"]", "[\"foo\",null]", "[null,2,9,1]", "[2,null,2,9]", "[999.0,5.5,null,1.1]", "[2.2,999.0,5.5,null]", "[\"a\",\"b\",null]", null, null, "", 0L, 999.0D, "", 0L, 999.0D},
-          new Object[]{"[]", "[1,null,3]", "[1.1,2.2,null]", "[\"foo\"]", "[\"foo\"]", "[1,null,3,1]", "[2,1,null,3]", "[1.1,2.2,null,1.1]", "[2.2,1.1,2.2,null]", "[\"a\",\"b\"]", "[1,2,3,1,null,3]", "[1.1,2.2,3.3,1.1,2.2,null]", "", 1L, 1.1D, "", 1L, 1.1D},
-          new Object[]{"[\"d\",null,\"b\"]", "[1,2,3]", "[null,2.2,null]", "[\"d\",null,\"b\",\"foo\"]", "[\"foo\",\"d\",null,\"b\"]", "[1,2,3,1]", "[2,1,2,3]", "[null,2.2,null,1.1]", "[2.2,null,2.2,null]", "[\"b\",\"c\",\"d\",null,\"b\"]", "[1,2,3,4,1,2,3]", "[1.1,3.3,null,2.2,null]", "d", 1L, 0.0D, "d", 1L, 0.0D},
-          new Object[]{"[null,\"b\"]", null, "[999.0,null,5.5]", "[null,\"b\",\"foo\"]", "[\"foo\",null,\"b\"]", null, null, "[999.0,null,5.5,1.1]", "[2.2,999.0,null,5.5]", "[\"a\",\"b\",\"c\",null,\"b\"]", null, "[3.3,4.4,5.5,999.0,null,5.5]", "", null, 999.0D, "", null, 999.0D}
+          new Object[]{
+              null,
+              "[]",
+              null,
+              null,
+              null,
+              "[1]",
+              "[2]",
+              null,
+              null,
+              null,
+              "[1,2,3]",
+              null,
+              "",
+              null,
+              null,
+              "",
+              null,
+              null
+          },
+          new Object[]{
+              "[\"a\",\"b\"]",
+              "[2,3]",
+              "[null]",
+              "[\"a\",\"b\",\"foo\"]",
+              "[\"foo\",\"a\",\"b\"]",
+              "[2,3,1]",
+              "[2,2,3]",
+              "[null,1.1]",
+              "[2.2,null]",
+              null,
+              null,
+              null,
+              "a",
+              2L,
+              0.0D,
+              "a",
+              2L,
+              0.0D
+          },
+          new Object[]{
+              "[\"b\",\"b\"]",
+              "[1]",
+              null,
+              "[\"b\",\"b\",\"foo\"]",
+              "[\"foo\",\"b\",\"b\"]",
+              "[1,1]",
+              "[2,1]",
+              null,
+              null,
+              "[\"d\",\"e\",\"b\",\"b\"]",
+              "[1,4,1]",
+              null,
+              "b",
+              1L,
+              null,
+              "b",
+              1L,
+              null
+          },
+          new Object[]{
+              null,
+              "[null,2,9]",
+              "[999.0,5.5,null]",
+              null,
+              null,
+              "[null,2,9,1]",
+              "[2,null,2,9]",
+              "[999.0,5.5,null,1.1]",
+              "[2.2,999.0,5.5,null]",
+              null,
+              null,
+              null,
+              "",
+              0L,
+              999.0D,
+              "",
+              0L,
+              999.0D
+          },
+          new Object[]{
+              "[\"a\",\"b\"]",
+              "[1,null,3]",
+              "[1.1,2.2,null]",
+              "[\"a\",\"b\",\"foo\"]",
+              "[\"foo\",\"a\",\"b\"]",
+              "[1,null,3,1]",
+              "[2,1,null,3]",
+              "[1.1,2.2,null,1.1]",
+              "[2.2,1.1,2.2,null]",
+              "[\"a\",\"b\",\"a\",\"b\"]",
+              "[1,2,3,1,null,3]",
+              "[1.1,2.2,3.3,1.1,2.2,null]",
+              "a",
+              1L,
+              1.1D,
+              "a",
+              1L,
+              1.1D
+          },
+          new Object[]{
+              "[\"d\",null,\"b\"]",
+              "[1,2,3]",
+              "[null,2.2,null]",
+              "[\"d\",null,\"b\",\"foo\"]",
+              "[\"foo\",\"d\",null,\"b\"]",
+              "[1,2,3,1]",
+              "[2,1,2,3]",
+              "[null,2.2,null,1.1]",
+              "[2.2,null,2.2,null]",
+              "[\"b\",\"c\",\"d\",null,\"b\"]",
+              "[1,2,3,4,1,2,3]",
+              "[1.1,3.3,null,2.2,null]",
+              "d",
+              1L,
+              0.0D,
+              "d",
+              1L,
+              0.0D
+          },
+          new Object[]{
+              "[null,\"b\"]",
+              null,
+              "[999.0,null,5.5]",
+              "[null,\"b\",\"foo\"]",
+              "[\"foo\",null,\"b\"]",
+              null,
+              null,
+              "[999.0,null,5.5,1.1]",
+              "[2.2,999.0,null,5.5]",
+              "[\"a\",\"b\",\"c\",null,\"b\"]",
+              null,
+              "[3.3,4.4,5.5,999.0,null,5.5]",
+              "",
+              null,
+              999.0D,
+              "",
+              null,
+              999.0D
+          },
+          new Object[]{
+              null,
+              null,
+              "[]",
+              null,
+              null,
+              null,
+              null,
+              "[1.1]",
+              "[2.2]",
+              null,
+              null,
+              "[1.1,2.2,3.3]",
+              "",
+              null,
+              null,
+              "",
+              null,
+              null
+          },
+          new Object[]{
+              "[\"a\",\"b\"]",
+              "[2,3]",
+              "[null,1.1]",
+              "[\"a\",\"b\",\"foo\"]",
+              "[\"foo\",\"a\",\"b\"]",
+              "[2,3,1]",
+              "[2,2,3]",
+              "[null,1.1,1.1]",
+              "[2.2,null,1.1]",
+              null,
+              null,
+              null,
+              "a",
+              2L,
+              0.0D,
+              "a",
+              2L,
+              0.0D
+          },
+          new Object[]{
+              "[\"b\",\"b\"]",
+              "[null]",
+              null,
+              "[\"b\",\"b\",\"foo\"]",
+              "[\"foo\",\"b\",\"b\"]",
+              "[null,1]",
+              "[2,null]",
+              null,
+              null,
+              "[\"d\",\"e\",\"b\",\"b\"]",
+              "[1,4,null]",
+              null,
+              "b",
+              0L,
+              null,
+              "b",
+              0L,
+              null
+          },
+          new Object[]{
+              "[null]",
+              "[null,2,9]",
+              "[999.0,5.5,null]",
+              "[null,\"foo\"]",
+              "[\"foo\",null]",
+              "[null,2,9,1]",
+              "[2,null,2,9]",
+              "[999.0,5.5,null,1.1]",
+              "[2.2,999.0,5.5,null]",
+              "[\"a\",\"b\",null]",
+              null,
+              null,
+              "",
+              0L,
+              999.0D,
+              "",
+              0L,
+              999.0D
+          },
+          new Object[]{
+              "[]",
+              "[1,null,3]",
+              "[1.1,2.2,null]",
+              "[\"foo\"]",
+              "[\"foo\"]",
+              "[1,null,3,1]",
+              "[2,1,null,3]",
+              "[1.1,2.2,null,1.1]",
+              "[2.2,1.1,2.2,null]",
+              "[\"a\",\"b\"]",
+              "[1,2,3,1,null,3]",
+              "[1.1,2.2,3.3,1.1,2.2,null]",
+              "",
+              1L,
+              1.1D,
+              "",
+              1L,
+              1.1D
+          },
+          new Object[]{
+              "[\"d\",null,\"b\"]",
+              "[1,2,3]",
+              "[null,2.2,null]",
+              "[\"d\",null,\"b\",\"foo\"]",
+              "[\"foo\",\"d\",null,\"b\"]",
+              "[1,2,3,1]",
+              "[2,1,2,3]",
+              "[null,2.2,null,1.1]",
+              "[2.2,null,2.2,null]",
+              "[\"b\",\"c\",\"d\",null,\"b\"]",
+              "[1,2,3,4,1,2,3]",
+              "[1.1,3.3,null,2.2,null]",
+              "d",
+              1L,
+              0.0D,
+              "d",
+              1L,
+              0.0D
+          },
+          new Object[]{
+              "[null,\"b\"]",
+              null,
+              "[999.0,null,5.5]",
+              "[null,\"b\",\"foo\"]",
+              "[\"foo\",null,\"b\"]",
+              null,
+              null,
+              "[999.0,null,5.5,1.1]",
+              "[2.2,999.0,null,5.5]",
+              "[\"a\",\"b\",\"c\",null,\"b\"]",
+              null,
+              "[3.3,4.4,5.5,999.0,null,5.5]",
+              "",
+              null,
+              999.0D,
+              "",
+              null,
+              999.0D
+          }
       );
     } else {
       expectedResults = ImmutableList.of(
-          new Object[]{null, "[]", null, null, null, "[1]", "[2]", null, null, null, "[1,2,3]", null, null, null, null, null, null, null},
-          new Object[]{"[\"a\",\"b\"]", "[2,3]", "[null]", "[\"a\",\"b\",\"foo\"]", "[\"foo\",\"a\",\"b\"]", "[2,3,1]", "[2,2,3]", "[null,1.1]", "[2.2,null]", null, null, null, "a", 2L, null, "a", 2L, null},
-          new Object[]{"[\"b\",\"b\"]", "[1]", null, "[\"b\",\"b\",\"foo\"]", "[\"foo\",\"b\",\"b\"]", "[1,1]", "[2,1]", null, null, "[\"d\",\"e\",\"b\",\"b\"]", "[1,4,1]", null, "b", 1L, null, "b", 1L, null},
-          new Object[]{null, "[null,2,9]", "[999.0,5.5,null]", null, null, "[null,2,9,1]", "[2,null,2,9]", "[999.0,5.5,null,1.1]", "[2.2,999.0,5.5,null]", null, null, null, null, null, 999.0D, null, null, 999.0D},
-          new Object[]{"[\"a\",\"b\"]", "[1,null,3]", "[1.1,2.2,null]", "[\"a\",\"b\",\"foo\"]", "[\"foo\",\"a\",\"b\"]", "[1,null,3,1]", "[2,1,null,3]", "[1.1,2.2,null,1.1]", "[2.2,1.1,2.2,null]", "[\"a\",\"b\",\"a\",\"b\"]", "[1,2,3,1,null,3]", "[1.1,2.2,3.3,1.1,2.2,null]", "a", 1L, 1.1D, "a", 1L, 1.1D},
-          new Object[]{"[\"d\",null,\"b\"]", "[1,2,3]", "[null,2.2,null]", "[\"d\",null,\"b\",\"foo\"]", "[\"foo\",\"d\",null,\"b\"]", "[1,2,3,1]", "[2,1,2,3]", "[null,2.2,null,1.1]", "[2.2,null,2.2,null]", "[\"b\",\"c\",\"d\",null,\"b\"]", "[1,2,3,4,1,2,3]", "[1.1,3.3,null,2.2,null]", "d", 1L, null, "d", 1L, null},
-          new Object[]{"[null,\"b\"]", null, "[999.0,null,5.5]", "[null,\"b\",\"foo\"]", "[\"foo\",null,\"b\"]", null, null, "[999.0,null,5.5,1.1]", "[2.2,999.0,null,5.5]", "[\"a\",\"b\",\"c\",null,\"b\"]", null, "[3.3,4.4,5.5,999.0,null,5.5]", null, null, 999.0D, null, null, 999.0D},
-          new Object[]{null, null, "[]", null, null, null, null, "[1.1]", "[2.2]", null, null, "[1.1,2.2,3.3]", null, null, null, null, null, null},
-          new Object[]{"[\"a\",\"b\"]", "[2,3]", "[null,1.1]", "[\"a\",\"b\",\"foo\"]", "[\"foo\",\"a\",\"b\"]", "[2,3,1]", "[2,2,3]", "[null,1.1,1.1]", "[2.2,null,1.1]", null, null, null, "a", 2L, null, "a", 2L, null},
-          new Object[]{"[\"b\",\"b\"]", "[null]", null, "[\"b\",\"b\",\"foo\"]", "[\"foo\",\"b\",\"b\"]", "[null,1]", "[2,null]", null, null, "[\"d\",\"e\",\"b\",\"b\"]", "[1,4,null]", null, "b", null, null, "b", null, null},
-          new Object[]{"[null]", "[null,2,9]", "[999.0,5.5,null]", "[null,\"foo\"]", "[\"foo\",null]", "[null,2,9,1]", "[2,null,2,9]", "[999.0,5.5,null,1.1]", "[2.2,999.0,5.5,null]", "[\"a\",\"b\",null]", null, null, null, null, 999.0D, null, null, 999.0D},
-          new Object[]{"[]", "[1,null,3]", "[1.1,2.2,null]", "[\"foo\"]", "[\"foo\"]", "[1,null,3,1]", "[2,1,null,3]", "[1.1,2.2,null,1.1]", "[2.2,1.1,2.2,null]", "[\"a\",\"b\"]", "[1,2,3,1,null,3]", "[1.1,2.2,3.3,1.1,2.2,null]", null, 1L, 1.1D, null, 1L, 1.1D},
-          new Object[]{"[\"d\",null,\"b\"]", "[1,2,3]", "[null,2.2,null]", "[\"d\",null,\"b\",\"foo\"]", "[\"foo\",\"d\",null,\"b\"]", "[1,2,3,1]", "[2,1,2,3]", "[null,2.2,null,1.1]", "[2.2,null,2.2,null]", "[\"b\",\"c\",\"d\",null,\"b\"]", "[1,2,3,4,1,2,3]", "[1.1,3.3,null,2.2,null]", "d", 1L, null, "d", 1L, null},
-          new Object[]{"[null,\"b\"]", null, "[999.0,null,5.5]", "[null,\"b\",\"foo\"]", "[\"foo\",null,\"b\"]", null, null, "[999.0,null,5.5,1.1]", "[2.2,999.0,null,5.5]", "[\"a\",\"b\",\"c\",null,\"b\"]", null, "[3.3,4.4,5.5,999.0,null,5.5]", null, null, 999.0D, null, null, 999.0D}
+          new Object[]{
+              null,
+              "[]",
+              null,
+              null,
+              null,
+              "[1]",
+              "[2]",
+              null,
+              null,
+              null,
+              "[1,2,3]",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+          },
+          new Object[]{
+              "[\"a\",\"b\"]",
+              "[2,3]",
+              "[null]",
+              "[\"a\",\"b\",\"foo\"]",
+              "[\"foo\",\"a\",\"b\"]",
+              "[2,3,1]",
+              "[2,2,3]",
+              "[null,1.1]",
+              "[2.2,null]",
+              null,
+              null,
+              null,
+              "a",
+              2L,
+              null,
+              "a",
+              2L,
+              null
+          },
+          new Object[]{
+              "[\"b\",\"b\"]",
+              "[1]",
+              null,
+              "[\"b\",\"b\",\"foo\"]",
+              "[\"foo\",\"b\",\"b\"]",
+              "[1,1]",
+              "[2,1]",
+              null,
+              null,
+              "[\"d\",\"e\",\"b\",\"b\"]",
+              "[1,4,1]",
+              null,
+              "b",
+              1L,
+              null,
+              "b",
+              1L,
+              null
+          },
+          new Object[]{
+              null,
+              "[null,2,9]",
+              "[999.0,5.5,null]",
+              null,
+              null,
+              "[null,2,9,1]",
+              "[2,null,2,9]",
+              "[999.0,5.5,null,1.1]",
+              "[2.2,999.0,5.5,null]",
+              null,
+              null,
+              null,
+              null,
+              null,
+              999.0D,
+              null,
+              null,
+              999.0D
+          },
+          new Object[]{
+              "[\"a\",\"b\"]",
+              "[1,null,3]",
+              "[1.1,2.2,null]",
+              "[\"a\",\"b\",\"foo\"]",
+              "[\"foo\",\"a\",\"b\"]",
+              "[1,null,3,1]",
+              "[2,1,null,3]",
+              "[1.1,2.2,null,1.1]",
+              "[2.2,1.1,2.2,null]",
+              "[\"a\",\"b\",\"a\",\"b\"]",
+              "[1,2,3,1,null,3]",
+              "[1.1,2.2,3.3,1.1,2.2,null]",
+              "a",
+              1L,
+              1.1D,
+              "a",
+              1L,
+              1.1D
+          },
+          new Object[]{
+              "[\"d\",null,\"b\"]",
+              "[1,2,3]",
+              "[null,2.2,null]",
+              "[\"d\",null,\"b\",\"foo\"]",
+              "[\"foo\",\"d\",null,\"b\"]",
+              "[1,2,3,1]",
+              "[2,1,2,3]",
+              "[null,2.2,null,1.1]",
+              "[2.2,null,2.2,null]",
+              "[\"b\",\"c\",\"d\",null,\"b\"]",
+              "[1,2,3,4,1,2,3]",
+              "[1.1,3.3,null,2.2,null]",
+              "d",
+              1L,
+              null,
+              "d",
+              1L,
+              null
+          },
+          new Object[]{
+              "[null,\"b\"]",
+              null,
+              "[999.0,null,5.5]",
+              "[null,\"b\",\"foo\"]",
+              "[\"foo\",null,\"b\"]",
+              null,
+              null,
+              "[999.0,null,5.5,1.1]",
+              "[2.2,999.0,null,5.5]",
+              "[\"a\",\"b\",\"c\",null,\"b\"]",
+              null,
+              "[3.3,4.4,5.5,999.0,null,5.5]",
+              null,
+              null,
+              999.0D,
+              null,
+              null,
+              999.0D
+          },
+          new Object[]{
+              null,
+              null,
+              "[]",
+              null,
+              null,
+              null,
+              null,
+              "[1.1]",
+              "[2.2]",
+              null,
+              null,
+              "[1.1,2.2,3.3]",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+          },
+          new Object[]{
+              "[\"a\",\"b\"]",
+              "[2,3]",
+              "[null,1.1]",
+              "[\"a\",\"b\",\"foo\"]",
+              "[\"foo\",\"a\",\"b\"]",
+              "[2,3,1]",
+              "[2,2,3]",
+              "[null,1.1,1.1]",
+              "[2.2,null,1.1]",
+              null,
+              null,
+              null,
+              "a",
+              2L,
+              null,
+              "a",
+              2L,
+              null
+          },
+          new Object[]{
+              "[\"b\",\"b\"]",
+              "[null]",
+              null,
+              "[\"b\",\"b\",\"foo\"]",
+              "[\"foo\",\"b\",\"b\"]",
+              "[null,1]",
+              "[2,null]",
+              null,
+              null,
+              "[\"d\",\"e\",\"b\",\"b\"]",
+              "[1,4,null]",
+              null,
+              "b",
+              null,
+              null,
+              "b",
+              null,
+              null
+          },
+          new Object[]{
+              "[null]",
+              "[null,2,9]",
+              "[999.0,5.5,null]",
+              "[null,\"foo\"]",
+              "[\"foo\",null]",
+              "[null,2,9,1]",
+              "[2,null,2,9]",
+              "[999.0,5.5,null,1.1]",
+              "[2.2,999.0,5.5,null]",
+              "[\"a\",\"b\",null]",
+              null,
+              null,
+              null,
+              null,
+              999.0D,
+              null,
+              null,
+              999.0D
+          },
+          new Object[]{
+              "[]",
+              "[1,null,3]",
+              "[1.1,2.2,null]",
+              "[\"foo\"]",
+              "[\"foo\"]",
+              "[1,null,3,1]",
+              "[2,1,null,3]",
+              "[1.1,2.2,null,1.1]",
+              "[2.2,1.1,2.2,null]",
+              "[\"a\",\"b\"]",
+              "[1,2,3,1,null,3]",
+              "[1.1,2.2,3.3,1.1,2.2,null]",
+              null,
+              1L,
+              1.1D,
+              null,
+              1L,
+              1.1D
+          },
+          new Object[]{
+              "[\"d\",null,\"b\"]",
+              "[1,2,3]",
+              "[null,2.2,null]",
+              "[\"d\",null,\"b\",\"foo\"]",
+              "[\"foo\",\"d\",null,\"b\"]",
+              "[1,2,3,1]",
+              "[2,1,2,3]",
+              "[null,2.2,null,1.1]",
+              "[2.2,null,2.2,null]",
+              "[\"b\",\"c\",\"d\",null,\"b\"]",
+              "[1,2,3,4,1,2,3]",
+              "[1.1,3.3,null,2.2,null]",
+              "d",
+              1L,
+              null,
+              "d",
+              1L,
+              null
+          },
+          new Object[]{
+              "[null,\"b\"]",
+              null,
+              "[999.0,null,5.5]",
+              "[null,\"b\",\"foo\"]",
+              "[\"foo\",null,\"b\"]",
+              null,
+              null,
+              "[999.0,null,5.5,1.1]",
+              "[2.2,999.0,null,5.5]",
+              "[\"a\",\"b\",\"c\",null,\"b\"]",
+              null,
+              "[3.3,4.4,5.5,999.0,null,5.5]",
+              null,
+              null,
+              999.0D,
+              null,
+              null,
+              999.0D
+          }
       );
     }
     testQuery(
@@ -661,9 +1194,21 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
                     expressionVirtualColumn("v3", "array_prepend(2,\"arrayLongNulls\")", ColumnType.LONG_ARRAY),
                     expressionVirtualColumn("v4", "array_append(\"arrayDoubleNulls\",1.1)", ColumnType.DOUBLE_ARRAY),
                     expressionVirtualColumn("v5", "array_prepend(2.2,\"arrayDoubleNulls\")", ColumnType.DOUBLE_ARRAY),
-                    expressionVirtualColumn("v6", "array_concat(\"arrayString\",\"arrayStringNulls\")", ColumnType.STRING_ARRAY),
-                    expressionVirtualColumn("v7", "array_concat(\"arrayLong\",\"arrayLongNulls\")", ColumnType.LONG_ARRAY),
-                    expressionVirtualColumn("v8", "array_concat(\"arrayDouble\",\"arrayDoubleNulls\")", ColumnType.DOUBLE_ARRAY),
+                    expressionVirtualColumn(
+                        "v6",
+                        "array_concat(\"arrayString\",\"arrayStringNulls\")",
+                        ColumnType.STRING_ARRAY
+                    ),
+                    expressionVirtualColumn(
+                        "v7",
+                        "array_concat(\"arrayLong\",\"arrayLongNulls\")",
+                        ColumnType.LONG_ARRAY
+                    ),
+                    expressionVirtualColumn(
+                        "v8",
+                        "array_concat(\"arrayDouble\",\"arrayDoubleNulls\")",
+                        ColumnType.DOUBLE_ARRAY
+                    ),
                     expressionVirtualColumn("v9", "array_offset(\"arrayStringNulls\",0)", ColumnType.STRING)
                 )
                 .columns(
@@ -1341,6 +1886,138 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
   }
 
   @Test
+  public void testArrayContainsFilterWithLiteralArrayAndScalar()
+  {
+    testQuery(
+        "SELECT dim2 FROM foo WHERE ARRAY_CONTAINS(ARRAY['','abc'], dim2)",
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(CalciteTests.DATASOURCE1)
+                .intervals(querySegmentSpec(Filtration.eternity()))
+                .filters(
+                    in("dim2", ImmutableList.of("", "abc"), null)
+                )
+                .columns("dim2")
+                .context(QUERY_CONTEXT_DEFAULT)
+                .build()
+        ),
+        NullHandling.replaceWithDefault() ? ImmutableList.of(
+            new Object[]{""},
+            new Object[]{""},
+            new Object[]{"abc"},
+            new Object[]{""}
+        ) :
+        ImmutableList.of(
+            new Object[]{""},
+            new Object[]{"abc"}
+        )
+    );
+  }
+
+  @Test
+  public void testArrayContainsFilterWithLiteralArrayAndScalar_long()
+  {
+    Druids.ScanQueryBuilder builder = newScanQueryBuilder()
+        .dataSource(CalciteTests.DATASOURCE3)
+        .intervals(querySegmentSpec(Filtration.eternity()))
+        .columns("dim2")
+        .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
+        .limit(5)
+        .context(QUERY_CONTEXT_DEFAULT);
+
+    if (NullHandling.sqlCompatible()) {
+      builder = builder.filters(
+          or(
+              equality("l1", "1", ColumnType.LONG),
+              equality("l1", "7", ColumnType.LONG),
+              isNull("l1")
+          )
+      );
+    } else {
+      builder = builder.filters(
+          in("l1", Arrays.asList(null, "1", "7"), null)
+      );
+    }
+    testQuery(
+        "SELECT dim2 FROM druid.numfoo WHERE ARRAY_CONTAINS(ARRAY[1, 7, null], l1) Limit 5",
+        ImmutableList.of(builder.build()),
+        NullHandling.replaceWithDefault() ?
+        ImmutableList.of(
+            new Object[]{"a"}
+        ) :
+        ImmutableList.of(
+            new Object[]{"a"},
+            new Object[]{"a"},
+            new Object[]{"abc"},
+            new Object[]{null}
+        )
+    );
+  }
+
+  @Test
+  public void testArrayContainsFilterWithLiteralArrayAndScalar_virtualColumn()
+  {
+    Druids.ScanQueryBuilder builder = newScanQueryBuilder()
+        .dataSource(CalciteTests.DATASOURCE3)
+        .intervals(querySegmentSpec(Filtration.eternity()))
+        .columns("dim3")
+        .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
+        .limit(5)
+        .context(QUERY_CONTEXT_DEFAULT);
+
+    if (NullHandling.sqlCompatible()) {
+      builder = builder.virtualColumns(expressionVirtualColumn("v0", "substring(\"dim3\", 0, 1)", ColumnType.STRING))
+                       .filters(
+                           in("v0", ImmutableList.of("a", "b"), null)
+                       );
+    } else {
+      builder = builder.filters(
+          in("dim3", ImmutableList.of("a", "b"), new SubstringDimExtractionFn(0, 1))
+      );
+    }
+
+    testQuery(
+        "SELECT dim3 FROM druid.numfoo WHERE ARRAY_CONTAINS(ARRAY['a','b'], SUBSTRING(dim3, 1, 1)) LIMIT 5",
+        ImmutableList.of(builder.build()),
+        ImmutableList.of(
+            new Object[]{"[\"a\",\"b\"]"},
+            new Object[]{"[\"b\",\"c\"]"}
+        )
+    );
+
+//    testBuilder()
+//        .sql("SELECT dim2 FROM foo WHERE ARRAY_CONTAINS(ARRAY['a', 'abc'], dim2)")
+//        .queryContext(QUERY_CONTEXT_NO_STRINGIFY_ARRAY_USE_EQUALITY)
+//        .expectedQueries(ImmutableList.of(
+//            newScanQueryBuilder()
+//                .dataSource(CalciteTests.DATASOURCE1)
+//                .intervals(querySegmentSpec(Filtration.eternity()))
+//                .filters(
+//                    or(
+//                        equality("dim2", "", ColumnType.STRING),
+//                        equality("dim2", "abc", ColumnType.STRING)
+//                    )
+//                )
+//                .columns("dim2")
+//                .context(QUERY_CONTEXT_DEFAULT)
+//                .build()
+//        ))
+//        .expectedResults(
+//            NullHandling.replaceWithDefault() ? ImmutableList.of(
+//                new Object[]{""},
+//                new Object[]{""},
+//                new Object[]{"abc"},
+//                new Object[]{""}
+//            ) :
+//            ImmutableList.of(
+//                new Object[]{""},
+//                new Object[]{"abc"}
+//            )
+//        )
+//        .run();
+  }
+
+  @Test
   public void testArraySlice()
   {
     testQuery(
@@ -1464,7 +2141,11 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
                         .setDataSource(DATA_SOURCE_ARRAYS)
                         .setInterval(querySegmentSpec(Filtration.eternity()))
                         .setGranularity(Granularities.ALL)
-                        .setVirtualColumns(expressionVirtualColumn("v0", "array_length(\"arrayStringNulls\")", ColumnType.LONG))
+                        .setVirtualColumns(expressionVirtualColumn(
+                            "v0",
+                            "array_length(\"arrayStringNulls\")",
+                            ColumnType.LONG
+                        ))
                         .setDimensions(
                             dimensions(
                                 new DefaultDimensionSpec("arrayStringNulls", "d0", ColumnType.STRING_ARRAY),
@@ -2967,7 +3648,6 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
   }
 
 
-
   @Test
   public void testArrayAggArrayColumns()
   {
@@ -4352,9 +5032,24 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "d", 1L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "d", 2L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "d", 3L},
-            new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), NullHandling.defaultStringValue(), 1L},
-            new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), NullHandling.defaultStringValue(), 2L},
-            new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), NullHandling.defaultStringValue(), 3L},
+            new Object[]{
+                Arrays.asList("d", null, "b"),
+                Arrays.asList(1L, 2L, 3L),
+                NullHandling.defaultStringValue(),
+                1L
+            },
+            new Object[]{
+                Arrays.asList("d", null, "b"),
+                Arrays.asList(1L, 2L, 3L),
+                NullHandling.defaultStringValue(),
+                2L
+            },
+            new Object[]{
+                Arrays.asList("d", null, "b"),
+                Arrays.asList(1L, 2L, 3L),
+                NullHandling.defaultStringValue(),
+                3L
+            },
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "b", 1L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "b", 2L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "b", 3L},
@@ -4364,15 +5059,45 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
             new Object[]{Arrays.asList("a", "b"), Arrays.asList(2L, 3L), "b", 3L},
             new Object[]{Arrays.asList("b", "b"), Collections.singletonList(null), "b", null},
             new Object[]{Arrays.asList("b", "b"), Collections.singletonList(null), "b", null},
-            new Object[]{Collections.singletonList(null), Arrays.asList(null, 2L, 9L), NullHandling.defaultStringValue(), null},
-            new Object[]{Collections.singletonList(null), Arrays.asList(null, 2L, 9L), NullHandling.defaultStringValue(), 2L},
-            new Object[]{Collections.singletonList(null), Arrays.asList(null, 2L, 9L), NullHandling.defaultStringValue(), 9L},
+            new Object[]{
+                Collections.singletonList(null),
+                Arrays.asList(null, 2L, 9L),
+                NullHandling.defaultStringValue(),
+                null
+            },
+            new Object[]{
+                Collections.singletonList(null),
+                Arrays.asList(null, 2L, 9L),
+                NullHandling.defaultStringValue(),
+                2L
+            },
+            new Object[]{
+                Collections.singletonList(null),
+                Arrays.asList(null, 2L, 9L),
+                NullHandling.defaultStringValue(),
+                9L
+            },
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "d", 1L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "d", 2L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "d", 3L},
-            new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), NullHandling.defaultStringValue(), 1L},
-            new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), NullHandling.defaultStringValue(), 2L},
-            new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), NullHandling.defaultStringValue(), 3L},
+            new Object[]{
+                Arrays.asList("d", null, "b"),
+                Arrays.asList(1L, 2L, 3L),
+                NullHandling.defaultStringValue(),
+                1L
+            },
+            new Object[]{
+                Arrays.asList("d", null, "b"),
+                Arrays.asList(1L, 2L, 3L),
+                NullHandling.defaultStringValue(),
+                2L
+            },
+            new Object[]{
+                Arrays.asList("d", null, "b"),
+                Arrays.asList(1L, 2L, 3L),
+                NullHandling.defaultStringValue(),
+                3L
+            },
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "b", 1L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "b", 2L},
             new Object[]{Arrays.asList("d", null, "b"), Arrays.asList(1L, 2L, 3L), "b", 3L}
@@ -4544,6 +5269,7 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
         )
     );
   }
+
   @Test
   public void testUnnestThriceWithFiltersOnDimAndAllUnnestColumns()
   {
@@ -4777,32 +5503,32 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
               .dataSource(
                   UnnestDataSource.create(
                       FilteredDataSource.create(
-                        UnnestDataSource.create(
-                            FilteredDataSource.create(
-                                UnnestDataSource.create(
-                                    new TableDataSource(DATA_SOURCE_ARRAYS),
-                                    expressionVirtualColumn(
-                                        "j0.unnest",
-                                        "\"arrayLongNulls\"",
-                                        ColumnType.LONG_ARRAY
-                                    ),
-                                    null
-                                ),
-                                NullHandling.sqlCompatible()
-                                ? equality("arrayString", ImmutableList.of("a", "b"), ColumnType.STRING_ARRAY)
-                                : expressionFilter("(\"arrayString\" == array('a','b'))")
-                            ),
-                            expressionVirtualColumn(
-                                "_j0.unnest",
-                                "\"arrayDoubleNulls\"",
-                                ColumnType.DOUBLE_ARRAY
-                            ),
-                            null
-                        ),
-                        or(
-                            equality("j0.unnest", 1, ColumnType.LONG),
-                            equality("_j0.unnest", 2.2, ColumnType.DOUBLE)
-                        )
+                          UnnestDataSource.create(
+                              FilteredDataSource.create(
+                                  UnnestDataSource.create(
+                                      new TableDataSource(DATA_SOURCE_ARRAYS),
+                                      expressionVirtualColumn(
+                                          "j0.unnest",
+                                          "\"arrayLongNulls\"",
+                                          ColumnType.LONG_ARRAY
+                                      ),
+                                      null
+                                  ),
+                                  NullHandling.sqlCompatible()
+                                  ? equality("arrayString", ImmutableList.of("a", "b"), ColumnType.STRING_ARRAY)
+                                  : expressionFilter("(\"arrayString\" == array('a','b'))")
+                              ),
+                              expressionVirtualColumn(
+                                  "_j0.unnest",
+                                  "\"arrayDoubleNulls\"",
+                                  ColumnType.DOUBLE_ARRAY
+                              ),
+                              null
+                          ),
+                          or(
+                              equality("j0.unnest", 1, ColumnType.LONG),
+                              equality("_j0.unnest", 2.2, ColumnType.DOUBLE)
+                          )
                       ),
                       expressionVirtualColumn(
                           "__j0.unnest",
@@ -5223,6 +5949,7 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
         )
     );
   }
+
   @Test
   public void testUnnestWithFilters()
   {
@@ -5325,9 +6052,11 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
                       null
                   ))
                   .intervals(querySegmentSpec(Filtration.eternity()))
-                  .virtualColumns(expressionVirtualColumn("v0",
-                                                          "timestamp_floor(\"__time\",'PT1H',null,'UTC')",
-                                                          ColumnType.LONG))
+                  .virtualColumns(expressionVirtualColumn(
+                      "v0",
+                      "timestamp_floor(\"__time\",'PT1H',null,'UTC')",
+                      ColumnType.LONG
+                  ))
                   .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
                   .legacy(false)
                   .context(QUERY_CONTEXT_UNNEST)

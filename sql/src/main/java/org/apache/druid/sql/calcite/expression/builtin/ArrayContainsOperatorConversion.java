@@ -35,6 +35,7 @@ import org.apache.druid.query.filter.ArrayContainsElementFilter;
 import org.apache.druid.query.filter.DimFilter;
 import org.apache.druid.query.filter.EqualityFilter;
 import org.apache.druid.query.filter.NullFilter;
+import org.apache.druid.query.filter.OrDimFilter;
 import org.apache.druid.segment.column.ColumnType;
 import org.apache.druid.segment.column.RowSignature;
 import org.apache.druid.sql.calcite.expression.DruidExpression;
@@ -191,6 +192,45 @@ public class ArrayContainsOperatorConversion extends BaseExpressionDimFilterOper
         }
       }
     }
+
+    // if left arg is literal array & right arg is a non array scalar column,
+    // it can be optimised by checking the overlap
+    if (leftExpr.isArray() && !rightExpr.isArray() && rightExpr.isSimpleExtraction()) {
+      Expr expr = plannerContext.parseExpression(leftExpr.getExpression());
+      if (expr.isLiteral()) {
+        ExprEval<?> exprEval = expr.eval(InputBindings.nilBindings());
+        final Object[] arrayElements = exprEval.asArray();
+        if (arrayElements == null || arrayElements.length == 0) {
+          // this isn't likely possible today because array constructor function does not accept empty argument list
+          // but just in case, return null
+          return null;
+        }
+
+        final List<DimFilter> filters = new ArrayList<>(arrayElements.length);
+        for (final Object val : arrayElements) {
+          if (plannerContext.isUseBoundsAndSelectors()) {
+            filters.add(newSelectorDimFilter(rightExpr.getSimpleExtraction(), Evals.asString(val)));
+          } else {
+            final String column = rightExpr.isDirectColumnAccess()
+                                  ? rightExpr.getSimpleExtraction().getColumn()
+                                  : virtualColumnRegistry.getOrCreateVirtualColumnForExpression(
+                                      rightExpr,
+                                      rightExpr.getDruidType()
+                                  );
+            if (val == null) {
+              filters.add(NullFilter.forColumn(column));
+            } else {
+              ColumnType columnType = ExpressionType.toColumnType(ExpressionType.elementType(exprEval.type()));
+              filters.add(
+                  new EqualityFilter(column, columnType, val, null)
+              );
+            }
+          }
+        }
+        return filters.size() == 1 ? filters.get(0) : new OrDimFilter(filters);
+      }
+    }
+
     return toExpressionFilter(plannerContext, getDruidFunctionName(), druidExpressions);
   }
 }
