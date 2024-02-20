@@ -1888,30 +1888,30 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
   }
 
   @Test
-  public void testArrayContainsFilterWithLiteralArrayAndScalar()
+  public void testArrayContainsFilterWithLiteralArrayAndScalar_string()
   {
     testQuery(
-        "SELECT dim2 FROM foo WHERE ARRAY_CONTAINS(ARRAY['','abc'], dim2)",
+        "SELECT dim3 FROM foo WHERE ARRAY_CONTAINS(ARRAY['a','abc'], dim2)",
         ImmutableList.of(
             newScanQueryBuilder()
                 .dataSource(CalciteTests.DATASOURCE1)
                 .intervals(querySegmentSpec(Filtration.eternity()))
                 .filters(
-                    in("dim2", ImmutableList.of("", "abc"), null)
+                    expressionFilter("array_contains(array('a','abc'),\"dim2\")")
                 )
-                .columns("dim2")
+                .columns("dim3")
                 .context(QUERY_CONTEXT_DEFAULT)
                 .build()
         ),
         NullHandling.replaceWithDefault() ? ImmutableList.of(
+            new Object[]{"[\"a\",\"b\"]"},
             new Object[]{""},
-            new Object[]{""},
-            new Object[]{"abc"},
             new Object[]{""}
         ) :
         ImmutableList.of(
+            new Object[]{"[\"a\",\"b\"]"},
             new Object[]{""},
-            new Object[]{"abc"}
+            new Object[]{null}
         )
     );
   }
@@ -1957,38 +1957,6 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
   }
 
   @Test
-  public void testArrayContainsFilterWithLiteralArrayAndScalar_virtualColumn()
-  {
-    Druids.ScanQueryBuilder builder = newScanQueryBuilder()
-        .dataSource(CalciteTests.DATASOURCE3)
-        .intervals(querySegmentSpec(Filtration.eternity()))
-        .columns("dim3")
-        .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
-        .limit(5)
-        .context(QUERY_CONTEXT_DEFAULT);
-
-    if (NullHandling.sqlCompatible()) {
-      builder = builder.virtualColumns(expressionVirtualColumn("v0", "strlen(\"dim3\")", ColumnType.STRING))
-                       .filters(
-                           in("v0", ImmutableList.of("a", "b"), null)
-                       );
-    } else {
-      builder = builder.filters(
-          in("dim3", ImmutableList.of("a", "b"), StrlenExtractionFn.instance())
-      );
-    }
-
-    testQuery(
-        "SELECT dim3 FROM druid.numfoo WHERE ARRAY_CONTAINS(ARRAY[5, 7, 10], strlen(dim3)) LIMIT 5",
-        ImmutableList.of(builder.build()),
-        ImmutableList.of(
-            new Object[]{"[\"a\",\"b\"]"},
-            new Object[]{"[\"b\",\"c\"]"}
-        )
-    );
-  }
-
-  @Test
   public void testArrayContainsFilterWithLiteralArrayAndScalar_dynamicParameter()
   {
     Druids.ScanQueryBuilder builder = newScanQueryBuilder()
@@ -2002,13 +1970,14 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
     if (NullHandling.sqlCompatible()) {
       builder = builder.filters(
           or(
-              equality("l1", "1", ColumnType.LONG),
-              equality("l1", "7", ColumnType.LONG)
+              equality("d1", "1.7", ColumnType.DOUBLE),
+              equality("d1", "2.2", ColumnType.DOUBLE),
+              isNull("d1")
           )
       );
     } else {
       builder = builder.filters(
-          in("l1", Arrays.asList("1", "7"), null)
+          in("d1", Arrays.asList("1.7", "2.2", null), null)
       );
     }
 
@@ -2016,13 +1985,20 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
         PLANNER_CONFIG_DEFAULT,
         QUERY_CONTEXT_DEFAULT,
         ImmutableList.of(
-            new SqlParameter(SqlType.ARRAY, Arrays.asList("1", "7", null))
+            new SqlParameter(SqlType.ARRAY, Arrays.asList(1.7, 2.2, null))
         ),
-        "SELECT dim3 FROM druid.numfoo WHERE ARRAY_CONTAINS(?, l1) LIMIT 5",
+        "SELECT dim3 FROM druid.numfoo WHERE ARRAY_CONTAINS(?, d1) LIMIT 5",
         CalciteTests.REGULAR_USER_AUTH_RESULT,
         ImmutableList.of(builder.build()),
+        NullHandling.replaceWithDefault() ?
         ImmutableList.of(
-            new Object[]{"[\"a\",\"b\"]"}
+            new Object[]{"[\"b\",\"c\"]"}
+        ) :
+        ImmutableList.of(
+            new Object[]{"[\"b\",\"c\"]"},
+            new Object[]{""},
+            new Object[]{null},
+            new Object[]{null}
         )
     );
   }
@@ -2033,7 +2009,7 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
     testQuery(
         "SELECT ARRAY_SLICE(dim3, 1) FROM druid.numfoo",
         QUERY_CONTEXT_NO_STRINGIFY_ARRAY,
-        ImmutableList.of(\
+        ImmutableList.of(
             new Druids.ScanQueryBuilder()
                 .dataSource(CalciteTests.DATASOURCE3)
                 .intervals(querySegmentSpec(Filtration.eternity()))
