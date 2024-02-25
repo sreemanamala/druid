@@ -1620,6 +1620,28 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
   }
 
   @Test
+  public void testArrayOverlapFilterNumeric()
+  {
+    testQuery(
+        "SELECT dim3 FROM druid.numfoo WHERE ARRAY_OVERLAP(l1, ARRAY[1, 7]) LIMIT 5",
+        ImmutableList.of(
+            newScanQueryBuilder()
+                .dataSource(CalciteTests.DATASOURCE3)
+                .intervals(querySegmentSpec(Filtration.eternity()))
+                .filters(new InDimFilter("l1", ImmutableList.of("1", "7"), null))
+                .columns("dim3")
+                .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
+                .limit(5)
+                .context(QUERY_CONTEXT_DEFAULT)
+                .build()
+        ),
+        ImmutableList.of(
+            new Object[]{"[\"a\",\"b\"]"}
+        )
+    );
+  }
+
+  @Test
   public void testArrayContainsFilter()
   {
     testQuery(
