@@ -342,25 +342,13 @@ public class MultiValueStringOperatorConversions
       }
 
       Expr expr = plannerContext.parseExpression(druidExpressions.get(1).getExpression());
-      // the right expression must be a literal array for this to work, since we need the values of the column
-      if (!expr.isLiteral()) {
-        return null;
-      }
-      Object[] lit = expr.eval(InputBindings.nilBindings()).asArray();
-      if (lit == null || lit.length == 0) {
-        return null;
-      }
-      HashSet<String> literals = Sets.newHashSetWithExpectedSize(lit.length);
-      for (Object o : lit) {
-        literals.add(Evals.asString(o));
-      }
 
       final DruidExpression.ExpressionGenerator builder = (args) -> {
         final StringBuilder expressionBuilder;
         if (isAllowList()) {
-          expressionBuilder = new StringBuilder("filter((x) -> array_contains(");
+          expressionBuilder = new StringBuilder("filter_only((x) -> array_contains(");
         } else {
-          expressionBuilder = new StringBuilder("filter((x) -> !array_contains(");
+          expressionBuilder = new StringBuilder("filter_only((x) -> !array_contains(");
         }
 
         expressionBuilder.append(args.get(1).getExpression())
@@ -370,7 +358,16 @@ public class MultiValueStringOperatorConversions
         return expressionBuilder.toString();
       };
 
-      if (druidExpressions.get(0).isSimpleExtraction()) {
+      if (druidExpressions.get(0).isSimpleExtraction() && expr.isLiteral()) {
+        Object[] lit = expr.eval(InputBindings.nilBindings()).asArray();
+        if (lit == null || lit.length == 0) {
+          return null;
+        }
+        HashSet<String> literals = Sets.newHashSetWithExpectedSize(lit.length);
+        for (Object o : lit) {
+          literals.add(Evals.asString(o));
+        }
+
         DruidExpression druidExpression = DruidExpression.ofVirtualColumn(
             Calcites.getColumnTypeForRelDataType(rexNode.getType()),
             builder,
