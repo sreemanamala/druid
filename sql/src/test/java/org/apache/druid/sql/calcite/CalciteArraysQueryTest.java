@@ -1618,6 +1618,36 @@ public class CalciteArraysQueryTest extends BaseCalciteQueryTest
   }
 
   @Test
+  public void testArrayPrependAppendOnNullArray()
+  {
+    testQuery(
+            "SELECT ARRAY_APPEND(ARRAY[null], 1), ARRAY_PREPEND(1, ARRAY[null, null])",
+            ImmutableList.of(
+                    Druids.newScanQueryBuilder()
+                            .dataSource(InlineDataSource.fromIterable(
+                                    ImmutableList.of(new Object[]{0L}),
+                                    RowSignature.builder()
+                                            .add("ZERO", ColumnType.LONG)
+                                            .build()
+                            ))
+                            .intervals(querySegmentSpec(Filtration.eternity()))
+                            .virtualColumns(
+                                    new ExpressionVirtualColumn("v0", "array(null,1)", ColumnType.LONG_ARRAY, TestExprMacroTable.INSTANCE),
+                                    new ExpressionVirtualColumn("v1", "array(1,null,null)", ColumnType.LONG_ARRAY, TestExprMacroTable.INSTANCE)
+                            )
+                            .columns("v0", "v1")
+                            .resultFormat(ScanQuery.ResultFormat.RESULT_FORMAT_COMPACTED_LIST)
+                            .legacy(false)
+                            .context(QUERY_CONTEXT_DEFAULT)
+                            .build()
+            ),
+            ImmutableList.of(
+                    new Object[]{"[null,1]", "[\"a\",null,null]"}
+            )
+    );
+  }
+
+  @Test
   public void testArrayConcat()
   {
     // Cannot vectorize due to usage of expressions.

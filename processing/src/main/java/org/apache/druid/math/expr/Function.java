@@ -509,6 +509,10 @@ public interface Function extends NamedFunction
     {
       final ExpressionType arrayType = arrayExpr.asArrayType();
       if (!scalarExpr.type().equals(arrayExpr.elementType())) {
+        // if all elements are null, consider it as NULL ARRAY and determine the type by scalar expr
+        if (Arrays.stream(arrayExpr.asArray()).noneMatch(Objects::nonNull)) {
+          return ExprEval.ofArray(scalarExpr.asArrayType(), add(arrayType.getElementType(), arrayExpr.asArray(), scalarExpr.value()));
+        }
         // try to cast
         ExprEval coerced = scalarExpr.castTo(arrayExpr.elementType());
         return ExprEval.ofArray(arrayType, add(arrayType.getElementType(), arrayExpr.asArray(), coerced.value()));

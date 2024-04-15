@@ -33,6 +33,7 @@ import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlCollation;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperatorBinding;
+import org.apache.calcite.sql.type.ArraySqlType;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
@@ -561,6 +562,19 @@ public class Calcites
     {
       RelDataType type = opBinding.getOperandType(0);
       if (SqlTypeUtil.isArray(type)) {
+        RelDataType arg1Type = opBinding.getOperandType(1);
+        // In case of NULL ARRAY, return the output type based on the scalar type.
+        // Since it is already an array type, component type can not be null. So NPE can safely be ignored.
+        if (type.getComponentType().getSqlTypeName() == SqlTypeName.NULL) {
+          // ignore if arg1 is also NULL as the type matches
+          if (arg1Type.getSqlTypeName() != SqlTypeName.NULL) {
+            return Calcites.createSqlArrayTypeWithNullability(
+                    opBinding.getTypeFactory(),
+                    arg1Type.getSqlTypeName(),
+                    true
+            );
+          }
+        }
         return type;
       }
       return Calcites.createSqlArrayTypeWithNullability(
@@ -578,6 +592,19 @@ public class Calcites
     {
       RelDataType type = opBinding.getOperandType(1);
       if (SqlTypeUtil.isArray(type)) {
+        RelDataType arg0Type = opBinding.getOperandType(0);
+        // In case of NULL ARRAY, return the output type based on the scalar type.
+        // Since it is already an array type, component type can not be null. So NPE can safely be ignored.
+        if (type.getComponentType().getSqlTypeName() == SqlTypeName.NULL) {
+          // ignore if arg0 is also NULL as the type matches
+          if (arg0Type.getSqlTypeName() != SqlTypeName.NULL) {
+            return Calcites.createSqlArrayTypeWithNullability(
+                    opBinding.getTypeFactory(),
+                    arg0Type.getSqlTypeName(),
+                    true
+            );
+          }
+        }
         return type;
       }
       return Calcites.createSqlArrayTypeWithNullability(
